@@ -1,13 +1,14 @@
 # Generic platform variables
 aap_hostname: aap263.localhosts.it
-#aap_username: {{ controller_username }}
-#aap_password: {{ controller_password }}
-#aap_validate_certs: false
-#
-#
+aap_username: "{{ controller_username }}"
+aap_password: "{{ controller_password }}"
+
+# This is needed so that dispatch doesn't fail as demo AAP has self-signed certificates
+aap_validate_certs: false
+
 #ansible_python_interpreter: /usr/bin/python3
-#demo_organization_name: BreakGlass-Demo
-#demo_organization_description: Organization for BreakGlass Compliance Demo
+demo_organization_name: BreakGlass-Demo
+demo_organization_description: Organization for BreakGlass Compliance Demo
 #aap_configuration_async_retries: 60
 #ssh_key_name: my_public_ssh_key
 #email_address: example@example.com # the email address used to send emails from the demo

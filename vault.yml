@@ -1,5 +1,4 @@
 ---
 controller_username: "admin"
 controller_password: "redhat"
-vault_pass: "redhat"
 ...
