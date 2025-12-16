@@ -1,0 +1,6 @@
+---
+aap_teams:
+  - name: BreakGlass-Team
+    description: Team responsible for the BreakGlass user
+    organization: "{{ demo_organization_name }}"
+...
