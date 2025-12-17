@@ -1,0 +1,40 @@
+---
+# Break-Glass Account Configuration Defaults
+
+# Account settings
+breakglass_username: "breakglass"
+breakglass_uid: 1999
+breakglass_gid: 1999
+breakglass_shell: "/bin/bash"
+breakglass_home: "/home/breakglass"
+breakglass_comment: "Break-Glass Emergency Account"
+
+# Groups the break-glass user should belong to
+breakglass_groups:
+  - wheel
+
+# Compliance check thresholds
+breakglass_min_uid: 1000
+breakglass_max_uid: 65534
+
+# Password policy
+breakglass_password_max_age: -1  # -1 = never expires
+breakglass_password_min_age: 0
+breakglass_password_warn_age: 7
+
+# SSH configuration
+breakglass_ssh_key_required: true
+breakglass_ssh_dir_mode: "0700"
+breakglass_authorized_keys_mode: "0600"
+
+# Report settings
+compliance_report_path: "/tmp/breakglass_compliance_report.json"
+compliance_report_format: "json"  # json or html
+generate_report: true
+
+# Remediation settings
+breakglass_create_home: true
+breakglass_force_password_change: false
+
+
+

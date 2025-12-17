@@ -1,0 +1,32 @@
+---
+# Internal variables for breakglass_compliance role
+# These are computed/derived values used internally
+
+# Compliance status tracking
+_compliance_checks:
+  - name: "account_exists"
+    description: "Break-glass account exists"
+  - name: "uid_valid"
+    description: "UID is within valid range"
+  - name: "shell_valid"
+    description: "Shell is set correctly"
+  - name: "home_exists"
+    description: "Home directory exists"
+  - name: "account_not_locked"
+    description: "Account is not locked"
+  - name: "password_not_expired"
+    description: "Password is not expired"
+  - name: "ssh_key_configured"
+    description: "SSH authorized keys configured"
+
+# Valid shells for break-glass account
+_valid_shells:
+  - "/bin/bash"
+  - "/bin/sh"
+  - "/bin/zsh"
+
+# Password status indicators (from chage output)
+_password_never_expires: -1
+
+
+

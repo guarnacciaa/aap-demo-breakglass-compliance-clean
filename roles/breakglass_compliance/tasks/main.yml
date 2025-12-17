@@ -1,0 +1,9 @@
+---
+# Main entry point for breakglass_compliance role
+# By default, runs the compliance check
+
+- name: Run break-glass compliance check
+  ansible.builtin.include_tasks: check.yml
+
+
+
