@@ -1,0 +1,21 @@
+---
+controller_templates:
+  - name: "BreakGlass - Compliance Check"
+    job_type: "run"
+    inventory: "{{ demo_inventory_name }}"
+    project: "{{ demo_project_name }}"
+    playbook: "check_breakglass_compliance.yml"
+    credentials:
+      - "RHEL"
+    job_tags: "{{ demo_job_templates_tag }}"
+    #execution_environment: "{{ aap_ee }}"
+
+  - name: "BreakGlass - Remediation"
+    job_type: "run"
+    inventory: "{{ demo_inventory_name }}"
+    project: "{{ demo_project_name }}"
+    playbook: "remediate_breakglass.yml"
+    credentials:
+      - "RHEL"
+    job_tags: "{{ demo_job_templates_tag }}"
+    #execution_environment: "{{ aap_ee }}"

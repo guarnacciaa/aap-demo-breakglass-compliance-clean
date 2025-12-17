@@ -1,0 +1,26 @@
+---
+- name: Break-Glass Account Remediation
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    breakglass_username: "breakglass"
+    breakglass_uid: 1999
+    breakglass_gid: 1999
+    breakglass_shell: "/bin/bash"
+    breakglass_home: "/home/breakglass"
+    breakglass_comment: "Break-Glass Emergency Account"
+    breakglass_groups:
+      - wheel
+    breakglass_password_hash: "{{ breakglass_password | password_hash('sha512') }}"
+    breakglass_ssh_pub_key: "{{ lookup('file', 'files/breakglass_id_rsa.pub', errors='ignore') | default('') }}"
+
+  tasks:
+    - name: Include remediation tasks
+      ansible.builtin.include_role:
+        name: breakglass_compliance
+        tasks_from: remediate.yml
+
+
+

@@ -1,6 +1,6 @@
 ---
 aap_teams:
-  - name: BreakGlass-Team
-    description: Team responsible for the BreakGlass user
+  - name: "{{ demo_team_name }}"
+    description: "{{ demo_team_description }}"
     organization: "{{ demo_organization_name }}"
 ...

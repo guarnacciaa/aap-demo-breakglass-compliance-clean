@@ -1,0 +1,13 @@
+---
+controller_roles:
+  - user: auditor
+    target_team: "{{ demo_team_name }}"
+    role: member
+  
+  - user: breakglass-admin
+    target_team: "{{ demo_team_name }}"
+    role: member
+
+  - team: "{{ demo_team_name }}"
+    project: "{{ demo_project_name }}"
+    role: use

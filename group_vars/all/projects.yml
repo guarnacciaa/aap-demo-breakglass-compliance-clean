@@ -1,7 +1,7 @@
 ---
 controller_projects:
-- name: BreakGlass-Automation
-  organization: Default
+- name: "{{ demo_project_name }}"
+  organization: "{{ demo_organization_name }}"
   scm_branch: master
   scm_clean: 'no'
   scm_delete_on_update: 'no'

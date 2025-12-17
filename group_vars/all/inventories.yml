@@ -1,0 +1,7 @@
+---
+controller_inventories:
+  - name: "{{ demo_inventory_name }}"
+    organization: "{{ demo_organization_name }}"
+    description: "Inventory for breakglass compliance checks"
+    state: present
+...

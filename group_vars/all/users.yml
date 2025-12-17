@@ -1,0 +1,18 @@
+---
+aap_user_accounts:
+
+  - username: "breakglass-admin"
+    password: "redhat"
+    email: "auditor@example.com"
+    is_superuser: false
+    is_platform_auditor: false
+    organization: "{{ demo_organization_name }}"
+    state: present
+
+  - username: "auditor"
+    password: "redhat"
+    email: "auditor@example.com"
+    is_superuser: false
+    is_platform_auditor: true
+    organization: "{{ demo_organization_name }}"
+    state: present

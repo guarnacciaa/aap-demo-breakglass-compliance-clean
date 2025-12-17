@@ -1,5 +1,5 @@
 ---
-- name: Configure AAP Demo Environment (CaC)
+- name: Configure AAP Demo Environment (CasC)
   hosts: all
   gather_facts: false
   vars_files:

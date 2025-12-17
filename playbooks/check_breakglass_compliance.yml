@@ -1,0 +1,27 @@
+---
+- name: Break-Glass Account Compliance Check
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    breakglass_username: "breakglass"
+    breakglass_min_uid: 1000
+    breakglass_shell: "/bin/bash"
+    breakglass_ssh_key_required: true
+    compliance_report_path: "/tmp/breakglass_compliance_report.json"
+
+  tasks:
+    - name: Include compliance check tasks
+      ansible.builtin.include_role:
+        name: breakglass_compliance
+        tasks_from: check.yml
+
+    - name: Generate compliance report
+      ansible.builtin.include_role:
+        name: breakglass_compliance
+        tasks_from: report.yml
+      when: generate_report | default(true)
+
+
+
