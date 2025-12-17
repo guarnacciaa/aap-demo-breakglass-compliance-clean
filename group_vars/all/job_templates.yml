@@ -4,7 +4,7 @@ controller_templates:
     job_type: "run"
     inventory: "{{ demo_inventory_name }}"
     project: "{{ demo_project_name }}"
-    playbook: "check_breakglass_compliance.yml"
+    playbook: playbooks/check_breakglass_compliance.yml
     credentials:
       - "RHEL"
     job_tags: "{{ demo_job_templates_tag }}"
@@ -14,7 +14,7 @@ controller_templates:
     job_type: "run"
     inventory: "{{ demo_inventory_name }}"
     project: "{{ demo_project_name }}"
-    playbook: "remediate_breakglass.yml"
+    playbook: playbooks/remediate_breakglass.yml
     credentials:
       - "RHEL"
     job_tags: "{{ demo_job_templates_tag }}"
