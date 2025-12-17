@@ -18,7 +18,9 @@ demo_team_description: Team responsible for the BreakGlass user
 
 demo_inventory_name: Demo-BreakGlass-Inventory
 
-demo_job_templates_tag: BreakGlass
+demo_job_templates_tag: "BreakGlass"
+
+demo_label_name: "BreakGlass"
 
 #aap_configuration_async_retries: 60
 #ssh_key_name: my_public_ssh_key

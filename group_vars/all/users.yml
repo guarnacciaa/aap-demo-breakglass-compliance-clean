@@ -9,6 +9,14 @@ aap_user_accounts:
     organization: "{{ demo_organization_name }}"
     state: present
 
+  - username: "breakglass-user"
+    password: "redhat"
+    email: "auditor@example.com"
+    is_superuser: false
+    is_platform_auditor: false
+    organization: "{{ demo_organization_name }}"
+    state: present
+
   - username: "auditor"
     password: "redhat"
     email: "auditor@example.com"

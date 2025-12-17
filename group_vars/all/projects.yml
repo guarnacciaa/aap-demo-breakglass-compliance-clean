@@ -2,9 +2,8 @@
 controller_projects:
 - name: "{{ demo_project_name }}"
   organization: "{{ demo_organization_name }}"
-  scm_branch: master
-  scm_clean: 'no'
-  scm_delete_on_update: 'no'
   scm_type: git
-  scm_update_on_launch: 'no'
   scm_url: https://github.com/guarnacciaa/aap-demo-breakglass-compliance-clean.git
+  scm_branch: master
+  scm_clean: true
+  scm_update_on_launch: true
