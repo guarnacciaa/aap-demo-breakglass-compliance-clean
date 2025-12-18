@@ -9,6 +9,9 @@ controller_templates:
       - "RHEL"
     labels: 
       - "{{ demo_job_templates_tag }}"
+    extra_vars:
+      compliance_report_path: "/tmp/breakglass_compliance_report.json"
+      compliance_report_format: "json"
     #execution_environment: "{{ aap_ee }}"
 
   - name: "BreakGlass - Remediation"
