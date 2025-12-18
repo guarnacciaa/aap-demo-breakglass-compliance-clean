@@ -3,12 +3,11 @@
   ansible.builtin.getent:
     database: passwd
     key: "{{ breakglass_username }}"
-  register: bg_user
   failed_when: false
 
 - name: Set user existence flag
   set_fact:
-    breakglass_user_exists: "{{ bg_user.getent is defined and bg_user.getent != {} }}"
+    breakglass_user_exists: "{{ ansible_facts.getent_passwd is defined and ansible_facts.getent_passwd[breakglass_username] is defined }}"
 
 - name: Record user existence check
   set_fact:
