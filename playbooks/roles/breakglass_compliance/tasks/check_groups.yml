@@ -1,12 +1,12 @@
 ---
 - name: Get user groups
-  command: "id -nG {{ breakglass_username }}"
-  register: groups
+  ansible.builtin.command: "id -nG {{ breakglass_username }}"
+  register: user_groups_result
   changed_when: false
 
 - name: Evaluate group membership
   set_fact:
-    missing_groups: "{{ breakglass_groups | difference(groups.stdout.split()) }}"
+    missing_groups: "{{ breakglass_groups | difference(user_groups_result.stdout.split()) }}"
 
 - name: Record group compliance
   set_fact:
