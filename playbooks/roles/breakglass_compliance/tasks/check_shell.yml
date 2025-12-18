@@ -1,0 +1,24 @@
+---
+- name: Get user shell
+  command: "getent passwd {{ breakglass_username }} | cut -d: -f7"
+  register: shell
+  changed_when: false
+
+- name: Record shell check
+  set_fact:
+    compliance: >-
+      {{
+        compliance | combine({
+          'checks': compliance.checks | combine({
+            'shell': {
+              'passed': shell.stdout == breakglass_shell,
+              'message': shell.stdout == breakglass_shell
+                | ternary(
+                    'Shell is compliant',
+                    'Shell mismatch: ' ~ shell.stdout
+                  )
+            }
+          }),
+          'compliant': compliance.compliant and (shell.stdout == breakglass_shell)
+        })
+      }}

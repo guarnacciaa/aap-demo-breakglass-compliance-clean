@@ -1,0 +1,24 @@
+---
+- name: Check home directory
+  ansible.builtin.stat:
+    path: "{{ breakglass_home }}"
+  register: home
+
+- name: Record home directory check
+  set_fact:
+    compliance: >-
+      {{
+        compliance | combine({
+          'checks': compliance.checks | combine({
+            'home': {
+              'passed': home.stat.exists,
+              'message': home.stat.exists
+                | ternary(
+                    'Home directory exists',
+                    'Home directory missing'
+                  )
+            }
+          }),
+          'compliant': compliance.compliant and home.stat.exists
+        })
+      }}

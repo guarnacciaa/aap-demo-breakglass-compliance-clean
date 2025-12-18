@@ -1,0 +1,32 @@
+---
+- name: Get user UID
+  command: "id -u {{ breakglass_username }}"
+  register: uid
+  changed_when: false
+
+- name: Evaluate UID compliance
+  set_fact:
+    uid_ok: >-
+      {{
+        uid.stdout | int >= breakglass_min_uid and
+        uid.stdout | int <= breakglass_max_uid
+      }}
+
+- name: Record UID check
+  set_fact:
+    compliance: >-
+      {{
+        compliance | combine({
+          'checks': compliance.checks | combine({
+            'uid': {
+              'passed': uid_ok,
+              'message': uid_ok
+                | ternary(
+                    'UID compliant (' ~ uid.stdout ~ ')',
+                    'UID out of range (' ~ uid.stdout ~ ')'
+                  )
+            }
+          }),
+          'compliant': compliance.compliant and uid_ok
+        })
+      }}

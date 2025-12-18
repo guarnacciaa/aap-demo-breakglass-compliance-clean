@@ -1,42 +1,31 @@
 ---
-# Break-Glass Compliance Report Generation Tasks (host-local)
+- name: Skip report if disabled
+  ansible.builtin.meta: end_task
+  when: not generate_report | bool
 
-- name: Ensure compliance check has been run
-  ansible.builtin.set_fact:
-    compliance_results: "{{ compliance_results | default({'error': 'No compliance check data available'}) }}"
-
-- name: Create report directory on host
+- name: Ensure report directory exists
   ansible.builtin.file:
     path: "{{ compliance_report_path | dirname }}"
     state: directory
     mode: "0755"
-  become: true
 
-# Generate JSON Report
-- name: Write JSON compliance report on host
+- name: Write compliance report (JSON)
   ansible.builtin.copy:
-    content: "{{ compliance_results | to_nice_json }}"
     dest: "{{ compliance_report_path }}"
+    content: "{{ compliance | to_nice_json }}"
     mode: "0644"
-  become: true
-  when: compliance_report_format == 'json'
+  when: compliance_report_format == "json"
 
-# Generate HTML Report (optional)
-- name: Write HTML compliance report on host
-  ansible.builtin.copy:
-    content: "{{ compliance_results | to_nice_html }}"   # or use HTML template
-    dest: "{{ compliance_report_path | regex_replace('\\.json$', '.html') }}"
-    mode: "0644"
-  become: true
-  when: compliance_report_format == 'html'
-
-- name: Display report summary
+- name: Display compliance summary
   ansible.builtin.debug:
-    msg: |
-      ========================================
-      COMPLIANCE REPORT GENERATED
-      ========================================
-      Host: {{ inventory_hostname }}
-      Status: {{ 'COMPLIANT' if compliance_results.compliant else 'NON-COMPLIANT' }}
-      Report saved to: {{ compliance_report_path }}
-      ========================================
+    msg:
+      host: "{{ compliance.host }}"
+      compliant: "{{ compliance.compliant }}"
+      failed_checks: >-
+        {{
+          compliance.checks
+          | dict2items
+          | selectattr('value.passed', 'equalto', false)
+          | map(attribute='key')
+          | list
+        }}

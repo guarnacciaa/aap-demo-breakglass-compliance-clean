@@ -1,0 +1,28 @@
+---
+- name: Get user groups
+  command: "id -nG {{ breakglass_username }}"
+  register: groups
+  changed_when: false
+
+- name: Evaluate group membership
+  set_fact:
+    missing_groups: "{{ breakglass_groups | difference(groups.stdout.split()) }}"
+
+- name: Record group compliance
+  set_fact:
+    compliance: >-
+      {{
+        compliance | combine({
+          'checks': compliance.checks | combine({
+            'groups': {
+              'passed': missing_groups | length == 0,
+              'message': (missing_groups | length == 0)
+                | ternary(
+                    'All required groups present',
+                    'Missing groups: ' ~ (missing_groups | join(', '))
+                  )
+            }
+          }),
+          'compliant': compliance.compliant and (missing_groups | length == 0)
+        })
+      }}

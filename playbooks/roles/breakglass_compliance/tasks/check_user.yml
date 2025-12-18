@@ -1,0 +1,30 @@
+---
+- name: Check if break-glass user exists
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ breakglass_username }}"
+  register: bg_user
+  failed_when: false
+
+- name: Set user existence flag
+  set_fact:
+    breakglass_user_exists: "{{ bg_user.getent is defined and bg_user.getent != {} }}"
+
+- name: Record user existence check
+  set_fact:
+    compliance: >-
+      {{
+        compliance | combine({
+          'checks': compliance.checks | combine({
+            'user_exists': {
+              'passed': breakglass_user_exists,
+              'message': breakglass_user_exists
+                | ternary(
+                    'User exists',
+                    'User does not exist'
+                  )
+            }
+          }),
+          'compliant': compliance.compliant and breakglass_user_exists
+        })
+      }}

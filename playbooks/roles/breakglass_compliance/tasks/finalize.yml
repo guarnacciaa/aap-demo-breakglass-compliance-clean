@@ -1,0 +1,13 @@
+---
+- name: Final compliance evaluation
+  set_fact:
+    compliance:
+      "{{ compliance | combine({
+        'compliant':
+          compliance.checks
+          | dict2items
+          | map(attribute='value.passed')
+          | select('equalto', false)
+          | list
+          | length == 0
+      }) }}"

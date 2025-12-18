@@ -1,13 +1,13 @@
 ---
 # Break-Glass Account Remediation Tasks
 
-- name: Ensure break-glass group exists
+- name: Ensure break-glass primary group exists
   ansible.builtin.group:
     name: "{{ breakglass_username }}"
     gid: "{{ breakglass_gid | default(omit) }}"
     state: present
 
-- name: Create break-glass user account
+- name: Ensure break-glass user exists
   ansible.builtin.user:
     name: "{{ breakglass_username }}"
     uid: "{{ breakglass_uid | default(omit) }}"
@@ -16,19 +16,20 @@
     shell: "{{ breakglass_shell }}"
     home: "{{ breakglass_home }}"
     comment: "{{ breakglass_comment }}"
-    create_home: "{{ breakglass_create_home | default(true) }}"
+    create_home: "{{ breakglass_create_home | bool }}"
     password: "{{ breakglass_password_hash | default(omit) }}"
     state: present
-  register: user_created
+  register: breakglass_user_result
 
-- name: Set password aging policy (never expire)
+- name: Configure password aging policy
   ansible.builtin.command: >
-    chage -M {{ breakglass_password_max_age }}
-          -m {{ breakglass_password_min_age }}
-          -W {{ breakglass_password_warn_age }}
-          {{ breakglass_username }}
+    chage
+    -M {{ breakglass_password_max_age }}
+    -m {{ breakglass_password_min_age }}
+    -W {{ breakglass_password_warn_age }}
+    {{ breakglass_username }}
   changed_when: true
-  when: breakglass_password_max_age == -1
+  when: breakglass_password_max_age is defined
 
 - name: Ensure .ssh directory exists
   ansible.builtin.file:
@@ -38,29 +39,32 @@
     group: "{{ breakglass_username }}"
     mode: "{{ breakglass_ssh_dir_mode }}"
 
-- name: Configure SSH authorized keys
+- name: Configure SSH authorized key
   ansible.posix.authorized_key:
     user: "{{ breakglass_username }}"
     key: "{{ breakglass_ssh_pub_key }}"
     state: present
     exclusive: false
-  when: breakglass_ssh_pub_key is defined and breakglass_ssh_pub_key | length > 0
+  when:
+    - breakglass_ssh_pub_key is defined
+    - breakglass_ssh_pub_key | length > 0
 
-- name: Ensure authorized_keys file has correct permissions
+- name: Ensure authorized_keys permissions
   ansible.builtin.file:
     path: "{{ breakglass_home }}/.ssh/authorized_keys"
     owner: "{{ breakglass_username }}"
     group: "{{ breakglass_username }}"
     mode: "{{ breakglass_authorized_keys_mode }}"
-  when: breakglass_ssh_pub_key is defined and breakglass_ssh_pub_key | length > 0
+  when:
+    - breakglass_ssh_pub_key is defined
+    - breakglass_ssh_pub_key | length > 0
 
-- name: Unlock the break-glass account
-  ansible.builtin.command: passwd -u {{ breakglass_username }}
+- name: Ensure break-glass account is unlocked
+  ansible.builtin.command: "passwd -u {{ breakglass_username }}"
   changed_when: true
   failed_when: false
-  when: user_created.changed
 
-- name: Add break-glass user to sudoers (passwordless)
+- name: Ensure passwordless sudo for break-glass user
   ansible.builtin.lineinfile:
     path: /etc/sudoers.d/breakglass
     line: "{{ breakglass_username }} ALL=(ALL) NOPASSWD: ALL"
@@ -71,19 +75,13 @@
 
 - name: Display remediation summary
   ansible.builtin.debug:
-    msg: |
-      ========================================
-      BREAK-GLASS REMEDIATION COMPLETE
-      ========================================
-      Host: {{ inventory_hostname }}
-      User: {{ breakglass_username }}
-      UID: {{ breakglass_uid | default('auto') }}
-      Home: {{ breakglass_home }}
-      Shell: {{ breakglass_shell }}
-      Groups: {{ breakglass_groups | join(', ') }}
-      SSH Key: {{ 'Configured' if (breakglass_ssh_pub_key is defined and breakglass_ssh_pub_key | length > 0) else 'Not configured' }}
-      Sudo: {{ 'Passwordless' if breakglass_sudo_nopasswd | default(true) else 'Standard' }}
-      ========================================
-
-
-
+    msg:
+      remediation:
+        host: "{{ inventory_hostname }}"
+        user: "{{ breakglass_username }}"
+        created_or_updated: "{{ breakglass_user_result.changed }}"
+        home: "{{ breakglass_home }}"
+        shell: "{{ breakglass_shell }}"
+        groups: "{{ breakglass_groups }}"
+        ssh_key_configured: "{{ breakglass_ssh_pub_key is defined }}"
+        sudo_nopasswd: "{{ breakglass_sudo_nopasswd | default(true) }}"

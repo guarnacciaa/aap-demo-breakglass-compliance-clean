@@ -1,0 +1,24 @@
+---
+- name: Check authorized_keys
+  ansible.builtin.stat:
+    path: "{{ breakglass_home }}/.ssh/authorized_keys"
+  register: auth_keys
+
+- name: Record SSH compliance
+  set_fact:
+    compliance: >-
+      {{
+        compliance | combine({
+          'checks': compliance.checks | combine({
+            'ssh_keys': {
+              'passed': auth_keys.stat.exists,
+              'message': auth_keys.stat.exists
+                | ternary(
+                    'SSH keys configured',
+                    'SSH authorized_keys missing'
+                  )
+            }
+          }),
+          'compliant': compliance.compliant and auth_keys.stat.exists
+        })
+      }}
