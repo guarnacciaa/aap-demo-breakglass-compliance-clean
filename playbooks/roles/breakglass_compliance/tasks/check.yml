@@ -39,7 +39,7 @@
 
 # Check 2: UID validation (only if user exists)
 - name: Get user UID
-  ansible.builtin.shell: id -u {{ breakglass_username }}
+  ansible.builtin.shell: "id -u {{ breakglass_username }}"
   register: breakglass_uid_check
   changed_when: false
   failed_when: false
@@ -63,7 +63,7 @@
 
 # Check 3: Shell validation
 - name: Get user shell
-  ansible.builtin.shell: getent passwd {{ breakglass_username }} | cut -d: -f7
+  ansible.builtin.shell: "getent passwd {{ breakglass_username }} | cut -d: -f7"
   register: breakglass_shell_check
   changed_when: false
   failed_when: false
@@ -110,7 +110,7 @@
 
 # Check 5: Account lock status
 - name: Check if account is locked
-  ansible.builtin.shell: passwd -S {{ breakglass_username }} 2>/dev/null | awk '{print $2}'
+  ansible.builtin.shell: "passwd -S {{ breakglass_username }} 2>/dev/null | awk '{print $2}'"
   register: breakglass_lock_check
   changed_when: false
   failed_when: false
@@ -134,7 +134,7 @@
 
 # Check 6: Password expiration
 - name: Check password expiration
-  ansible.builtin.shell: chage -l {{ breakglass_username }} 2>/dev/null | grep "Password expires" | cut -d: -f2 | xargs
+  ansible.builtin.shell: "chage -l {{ breakglass_username }} 2>/dev/null | grep 'Password expires' | cut -d: -f2 | xargs"
   register: breakglass_expiry_check
   changed_when: false
   failed_when: false
@@ -166,7 +166,7 @@
     - breakglass_user_check is defined and not breakglass_user_check.failed
 
 - name: Get authorized_keys content if exists
-  ansible.builtin.shell: wc -l < {{ breakglass_home | default('/home/' ~ breakglass_username) }}/.ssh/authorized_keys 2>/dev/null || echo 0
+  ansible.builtin.shell: "wc -l < {{ breakglass_home | default('/home/' ~ breakglass_username) }}/.ssh/authorized_keys 2>/dev/null || echo 0"
   register: breakglass_ssh_keys_count
   changed_when: false
   failed_when: false
