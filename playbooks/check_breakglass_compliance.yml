@@ -12,6 +12,13 @@
     compliance_report_path: "/tmp/breakglass_compliance_report.json"
 
   tasks:
+    - name: Where am I running?
+      debug:
+        msg:
+          - "inventory_hostname={{ inventory_hostname }}"
+          - "ansible_host={{ ansible_host | default('UNDEFINED') }}"
+          - "ansible_connection={{ ansible_connection | default('ssh') }}"
+
     - name: Include compliance check tasks
       ansible.builtin.include_role:
         name: breakglass_compliance
