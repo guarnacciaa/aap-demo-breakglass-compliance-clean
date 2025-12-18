@@ -1,26 +1,41 @@
 ---
+# Main orchestration for break-glass compliance
+
+# Initialization
 - include_tasks: init.yml
+
+# User existence check
 - include_tasks: check_user.yml
 
+# UID check (solo se l’utente esiste)
 - include_tasks: check_uid.yml
   when: breakglass_user_exists
 
+# Shell check (solo se l’utente esiste)
 - include_tasks: check_shell.yml
   when: breakglass_user_exists
 
+# Home directory check (solo se l’utente esiste)
 - include_tasks: check_home.yml
   when: breakglass_user_exists
 
+# Group membership check (solo se l’utente esiste)
 - include_tasks: check_groups.yml
   when: breakglass_user_exists
 
+# Password aging check (solo se l’utente esiste)
 - include_tasks: check_password.yml
   when: breakglass_user_exists
 
+# SSH key check (solo se richiesto e se l’utente esiste)
 - include_tasks: check_ssh.yml
   when:
     - breakglass_user_exists
-    - breakglass_ssh_key_required
+    - breakglass_ssh_key_required | default(true)
 
+# Finalize compliance results
 - include_tasks: finalize.yml
+
+# Generate compliance report (opzionale)
 - include_tasks: report.yml
+  when: generate_report | default(true)

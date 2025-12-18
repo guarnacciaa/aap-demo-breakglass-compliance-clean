@@ -1,31 +1,32 @@
 ---
-- name: Skip report if disabled
-  ansible.builtin.meta: end_task
-  when: not generate_report | bool
+- name: Initialize compliance report structure
+  ansible.builtin.set_fact:
+    breakglass_compliance_report:
+      host: "{{ inventory_hostname }}"
+      user: "{{ breakglass_username }}"
+      timestamp: "{{ ansible_date_time.iso8601 }}"
+      checks: {}
+  when: generate_report | default(true)
 
-- name: Ensure report directory exists
-  ansible.builtin.file:
-    path: "{{ compliance_report_path | dirname }}"
-    state: directory
-    mode: "0755"
+- name: Populate compliance report
+  ansible.builtin.set_fact:
+    breakglass_compliance_report: >-
+      {{
+        breakglass_compliance_report
+        | combine(
+            {
+              'checks': breakglass_checks | default({})
+            },
+            recursive=True
+          )
+      }}
+  when: generate_report | default(true)
 
-- name: Write compliance report (JSON)
+- name: Write compliance report to file
   ansible.builtin.copy:
     dest: "{{ compliance_report_path }}"
-    content: "{{ compliance | to_nice_json }}"
+    content: "{{ breakglass_compliance_report | to_nice_json }}"
     mode: "0644"
-  when: compliance_report_format == "json"
-
-- name: Display compliance summary
-  ansible.builtin.debug:
-    msg:
-      host: "{{ compliance.host }}"
-      compliant: "{{ compliance.compliant }}"
-      failed_checks: >-
-        {{
-          compliance.checks
-          | dict2items
-          | selectattr('value.passed', 'equalto', false)
-          | map(attribute='key')
-          | list
-        }}
+  when:
+    - generate_report | default(true)
+    - compliance_report_format | default('json') == 'json'
