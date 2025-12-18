@@ -1,0 +1,52 @@
+# Ansible Vault encrypted files (if decrypted locally)
+*.vault.yml.decrypted
+
+# SSH Keys - NEVER commit private keys
+files/breakglass_id_rsa
+files/breakglass_id_ed25519
+files/*.pem
+files/*.key
+
+# Keep public keys (optional, uncomment to ignore)
+# files/*.pub
+
+# Ansible retry files
+*.retry
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Ansible Galaxy downloaded collections (if installed locally)
+collections/ansible_collections/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Compliance reports (local testing)
+/tmp/breakglass_compliance_report.json
+
+# OS generated files
+Thumbs.db
+.DS_Store
+

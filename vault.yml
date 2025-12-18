@@ -1,4 +1,7 @@
 ---
 controller_username: "admin"
 controller_password: "redhat"
+
+# Break-glass account password (change this!)
+vault_breakglass_password: "BreakGlass123!"
 ...

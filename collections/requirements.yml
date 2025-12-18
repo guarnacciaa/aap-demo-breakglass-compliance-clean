@@ -1,0 +1,35 @@
+---
+collections:
+  # AAP Configuration-as-Code collection
+  - name: infra.aap_configuration
+    source: https://galaxy.ansible.com
+
+  # Execution Environment utilities
+  - name: infra.ee_utilities
+    version: "4.1.0"
+    source: https://galaxy.ansible.com
+
+  # AAP Controller collection (certified)
+  - name: ansible.controller
+    source: https://console.redhat.com/api/automation-hub/content/published/
+
+  # AAP Platform collection (certified)
+  - name: ansible.platform
+    source: https://console.redhat.com/api/automation-hub/content/published/
+
+  # Automation Hub collection (certified)
+  - name: ansible.hub
+    source: https://console.redhat.com/api/automation-hub/content/published/
+
+  # POSIX collection for Linux tasks (authorized_key, etc.)
+  - name: ansible.posix
+    source: https://galaxy.ansible.com
+
+  # Podman container collection
+  - name: containers.podman
+    source: https://galaxy.ansible.com
+
+  # General community modules
+  - name: community.general
+    source: https://galaxy.ansible.com
+

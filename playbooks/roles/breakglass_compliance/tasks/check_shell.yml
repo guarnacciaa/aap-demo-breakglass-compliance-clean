@@ -1,6 +1,6 @@
 ---
 - name: Get user shell
-  command: "getent passwd {{ breakglass_username }} | cut -d: -f7"
+  ansible.builtin.shell: "getent passwd {{ breakglass_username }} | cut -d: -f7"
   register: shell
   changed_when: false
 

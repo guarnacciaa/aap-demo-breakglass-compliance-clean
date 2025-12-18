@@ -17,7 +17,7 @@
     home: "{{ breakglass_home }}"
     comment: "{{ breakglass_comment }}"
     create_home: "{{ breakglass_create_home | bool }}"
-    password: "{{ breakglass_password_hash | default(omit) }}"
+    password: "{{ breakglass_password | password_hash('sha512') if breakglass_password is defined else omit }}"
     state: present
   register: breakglass_user_result
 

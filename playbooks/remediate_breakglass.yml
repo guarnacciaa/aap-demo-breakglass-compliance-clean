@@ -3,6 +3,8 @@
   hosts: all
   gather_facts: true
   become: true
+  vars_files:
+    - ../vault.yml
 
   vars:
     breakglass_password: "{{ vault_breakglass_password }}"
