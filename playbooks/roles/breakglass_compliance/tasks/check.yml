@@ -25,8 +25,8 @@
         compliance_results | combine({
           'checks': compliance_results.checks | combine({
             'account_exists': {
-              'passed': breakglass_user_check.failed is not defined or not breakglass_user_check.failed,
-              'message': 'User ' ~ breakglass_username ~ ' exists' if (breakglass_user_check.failed is not defined or not breakglass_user_check.failed) else 'User ' ~ breakglass_username ~ ' does not exist'
+              'passed': breakglass_user_check.getent is defined and breakglass_user_check.getent != {},
+              'message': 'User ' ~ breakglass_username ~ ' exists' if (breakglass_user_check.getent is defined and breakglass_user_check.getent != {}) else 'User ' ~ breakglass_username ~ ' does not exist'
             }
           })
         })
@@ -35,7 +35,7 @@
 - name: Mark non-compliant if account missing
   ansible.builtin.set_fact:
     compliance_results: "{{ compliance_results | combine({'compliant': false}) }}"
-  when: breakglass_user_check.failed is defined and breakglass_user_check.failed
+  when: breakglass_user_check.getent is not defined or breakglass_user_check.getent == {}
 
 # Check 2: UID validation (only if user exists)
 - name: Get user UID
@@ -43,7 +43,7 @@
   register: breakglass_uid_check
   changed_when: false
   failed_when: false
-  when: breakglass_user_check is defined and not breakglass_user_check.failed
+  when: breakglass_user_check.getent is defined and breakglass_user_check.getent != {}
 
 - name: Record UID check
   ansible.builtin.set_fact:
@@ -67,7 +67,7 @@
   register: breakglass_shell_check
   changed_when: false
   failed_when: false
-  when: breakglass_user_check is defined and not breakglass_user_check.failed
+  when: breakglass_user_check.getent is defined and breakglass_user_check.getent != {}
 
 - name: Record shell check
   ansible.builtin.set_fact:
@@ -91,7 +91,7 @@
   ansible.builtin.stat:
     path: "{{ breakglass_home | default('/home/' ~ breakglass_username) }}"
   register: breakglass_home_check
-  when: breakglass_user_check is defined and not breakglass_user_check.failed
+  when: breakglass_user_check.getent is defined and breakglass_user_check.getent != {}
 
 - name: Record home directory check
   ansible.builtin.set_fact:
@@ -114,7 +114,7 @@
   register: breakglass_lock_check
   changed_when: false
   failed_when: false
-  when: breakglass_user_check is defined and not breakglass_user_check.failed
+  when: breakglass_user_check.getent is defined and breakglass_user_check.getent != {}
 
 - name: Record account lock check
   ansible.builtin.set_fact:
@@ -138,7 +138,7 @@
   register: breakglass_expiry_check
   changed_when: false
   failed_when: false
-  when: breakglass_user_check is defined and not breakglass_user_check.failed
+  when: breakglass_user_check.getent is defined and breakglass_user_check.getent != {}
 
 - name: Record password expiration check
   ansible.builtin.set_fact:
@@ -163,7 +163,7 @@
   register: breakglass_ssh_check
   when:
     - breakglass_ssh_key_required | default(true)
-    - breakglass_user_check is defined and not breakglass_user_check.failed
+    - breakglass_user_check.getent is defined and breakglass_user_check.getent != {}
 
 - name: Get authorized_keys content if exists
   ansible.builtin.shell: "wc -l < {{ breakglass_home | default('/home/' ~ breakglass_username) }}/.ssh/authorized_keys 2>/dev/null || echo 0"
