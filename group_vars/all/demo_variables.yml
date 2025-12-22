@@ -1,29 +1,207 @@
-# Generic platform variables
+# ============================================================================
+# DEMO CONFIGURATION VARIABLES
+# ============================================================================
+# This file contains all the configurable settings for the Break-Glass
+# Compliance Demo. Modify these values to customize the demo for your
+# environment.
+#
+# TIP: After modifying this file, commit and push to Git, then sync the
+#      project in AAP to apply the changes.
+# ============================================================================
+
+
+# ============================================================================
+# AAP CONNECTION SETTINGS
+# ============================================================================
+# These settings are used by the CasC playbook (aap_config.yml) to connect
+# to your Ansible Automation Platform Controller.
+
 aap_hostname: aap263.localhosts.it
+# The hostname of your AAP Controller (without https://).
+# Example: aap.example.com
+
 aap_username: "{{ controller_username }}"
+# Username for AAP API authentication.
+# This references a variable from vault.yml for security.
+
 aap_password: "{{ controller_password }}"
+# Password for AAP API authentication.
+# This references a variable from vault.yml for security.
 
-# This is needed so that dispatch doesn't fail as demo AAP has self-signed certificates
 aap_validate_certs: false
+# Whether to validate SSL certificates when connecting to AAP.
+# Set to 'false' for self-signed certificates (common in demos/labs).
+# Set to 'true' in production with valid certificates.
 
-#ansible_python_interpreter: /usr/bin/python3
+
+# ============================================================================
+# AAP ORGANIZATION & PROJECT SETTINGS
+# ============================================================================
+# These define the AAP objects that will be created by the CasC playbook.
 
 demo_organization_name: BreakGlass-Demo
+# Name of the AAP Organization to create.
+# All demo resources will be created under this organization.
+
 demo_organization_description: Organization for BreakGlass Compliance Demo
+# Description for the organization (visible in AAP UI).
 
 demo_project_name: BreakGlass-Automation
+# Name of the AAP Project (links to this Git repository).
 
 demo_team_name: BreakGlass-Team
+# Name of the AAP Team to create.
+
 demo_team_description: Team responsible for the BreakGlass user
+# Description for the team.
 
 demo_inventory_name: Demo-BreakGlass-Inventory
+# Name of the AAP Inventory containing target hosts.
 
 demo_job_templates_tag: "BreakGlass"
+# Tag applied to job templates for easy filtering.
 
 demo_label_name: "BreakGlass"
+# Label name for organizing resources in AAP.
 
-#aap_configuration_async_retries: 60
-#ssh_key_name: my_public_ssh_key
-#email_address: example@example.com # the email address used to send emails from the demo
-# redhat_subscription_username: user@example.com
-# redhat_subscription_password: CHANGEME
+
+# ============================================================================
+# BREAK-GLASS ACCOUNT SETTINGS
+# ============================================================================
+# Configure the break-glass emergency account that will be created and
+# checked on your target Linux hosts.
+
+breakglass_username: "breakglass"
+# Username for the emergency account.
+# This will be created on all target hosts.
+
+breakglass_uid: 1999
+# Numeric User ID (UID) for the account.
+# Using a fixed UID ensures consistency across all systems.
+# Must be >= 1000 (system accounts use lower UIDs).
+
+breakglass_gid: 1999
+# Numeric Group ID (GID) for the user's primary group.
+# Usually matches the UID.
+
+breakglass_shell: "/bin/bash"
+# Login shell for the break-glass user.
+# Options: /bin/bash, /bin/sh, /bin/zsh
+# WARNING: Do NOT use /sbin/nologin (disables login!)
+
+breakglass_home: "/home/breakglass"
+# Home directory path for the user.
+# This is where SSH keys will be stored.
+
+breakglass_comment: "Break-Glass Emergency Account"
+# Description of the account (shown in /etc/passwd).
+
+
+# ============================================================================
+# GROUP MEMBERSHIP
+# ============================================================================
+# Groups the break-glass user should belong to for proper access.
+
+breakglass_groups:
+  - wheel
+# List of additional groups for the user.
+# - "wheel" = sudo access on RHEL/CentOS/Fedora
+# - "sudo"  = sudo access on Debian/Ubuntu
+# Add more groups if needed (e.g., docker, libvirt)
+
+
+# ============================================================================
+# COMPLIANCE CHECK SETTINGS
+# ============================================================================
+# Thresholds and settings for the compliance check.
+
+breakglass_min_uid: 1000
+# Minimum acceptable UID. UIDs below 1000 are typically system accounts.
+
+breakglass_max_uid: 65534
+# Maximum acceptable UID. UID 65534 is often reserved for "nobody".
+
+breakglass_ssh_key_required: true
+# Whether SSH key configuration is mandatory.
+# true  = compliance fails if authorized_keys is missing
+# false = SSH key check is skipped
+
+
+# ============================================================================
+# PASSWORD POLICY
+# ============================================================================
+# Password aging settings for the break-glass account.
+# These are applied during remediation using the 'chage' command.
+
+breakglass_password_max_age: -1
+# Maximum days before password must be changed.
+# -1 = password NEVER expires (recommended for emergency accounts!)
+
+breakglass_password_min_age: 0
+# Minimum days before password CAN be changed.
+# 0 = no restriction
+
+breakglass_password_warn_age: 7
+# Days before expiration to show warning.
+# Not relevant when password never expires (-1).
+
+
+# ============================================================================
+# SSH SETTINGS
+# ============================================================================
+# Permissions for SSH directories and files.
+# These are security-critical - SSH refuses to work with loose permissions!
+
+breakglass_ssh_dir_mode: "0700"
+# Permissions for ~/.ssh directory.
+# 0700 = only owner can access (required by SSH)
+
+breakglass_authorized_keys_mode: "0600"
+# Permissions for ~/.ssh/authorized_keys file.
+# 0600 = only owner can read/write (required by SSH)
+
+
+# ============================================================================
+# REPORT SETTINGS
+# ============================================================================
+# Configure how compliance reports are generated and stored.
+
+compliance_report_path: "/tmp/breakglass_compliance_report.json"
+# Where to save the compliance report on each target host.
+# In production, you might use a permanent location or ship to a central server.
+
+generate_report: true
+# Whether to generate a compliance report file.
+# true  = write JSON report to compliance_report_path
+# false = only show results in Ansible output
+
+
+# ============================================================================
+# REMEDIATION SETTINGS
+# ============================================================================
+# Settings that control how remediation behaves.
+
+breakglass_create_home: true
+# Create home directory if it doesn't exist.
+# true  = create /home/breakglass
+# false = don't create (use existing or fail)
+
+breakglass_sudo_nopasswd: true
+# Allow break-glass user to run sudo without password.
+# true  = add NOPASSWD rule to /etc/sudoers.d/breakglass
+# false = require password for sudo
+
+
+# ============================================================================
+# COMMENTED OUT / OPTIONAL SETTINGS
+# ============================================================================
+# Uncomment and configure these if needed.
+
+# ansible_python_interpreter: /usr/bin/python3
+# Force a specific Python interpreter on target hosts.
+
+# aap_configuration_async_retries: 60
+# Number of retries for async AAP configuration tasks.
+
+# email_address: example@example.com
+# Email address for notifications (if implemented).

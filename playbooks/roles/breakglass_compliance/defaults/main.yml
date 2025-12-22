@@ -1,157 +1,77 @@
 # ============================================================================
 # BREAK-GLASS COMPLIANCE ROLE - DEFAULT VARIABLES
 # ============================================================================
-# This file contains the default configuration values for the break-glass
-# compliance role. These values can be overridden by:
-# - Variables in the playbook
-# - Variables in group_vars/
-# - Variables in host_vars/
-# - Extra variables passed at runtime (-e)
+# These are the DEFAULT values for the break-glass compliance role.
 #
-# The order of precedence (highest to lowest) is:
-# extra vars > playbook vars > host_vars > group_vars > role defaults
+# ╔════════════════════════════════════════════════════════════════════════╗
+# ║  NOTE: For this demo, configure these variables in:                   ║
+# ║        group_vars/all/demo_variables.yml                              ║
+# ║                                                                        ║
+# ║  Variables in group_vars override these defaults automatically.       ║
+# ╚════════════════════════════════════════════════════════════════════════╝
+#
+# This file serves as:
+# - Documentation of all available variables
+# - Fallback values if not defined elsewhere
+# - Reference for role reusability in other projects
 #
 # ============================================================================
 
 ---
-# Beginning of YAML document
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # ACCOUNT SETTINGS
-# ============================================================================
-# These define the break-glass user account properties.
+# ----------------------------------------------------------------------------
 
 breakglass_username: "breakglass"
-# The username for the break-glass emergency account.
-# This name will be used to:
-# - Create the user account
-# - Check compliance status
-# - Set up SSH access
-
 breakglass_uid: 1999
-# The numeric User ID (UID) for the account.
-# Using a fixed UID ensures consistency across all systems.
-# 1999 is chosen because:
-# - It's above 1000 (reserved for system accounts)
-# - It's memorable and distinctive
-
 breakglass_gid: 1999
-# The numeric Group ID (GID) for the user's primary group.
-# Matches the UID for consistency.
-
 breakglass_shell: "/bin/bash"
-# The login shell for the user.
-# /bin/bash is the standard interactive shell.
-# Other options: /bin/sh, /bin/zsh
-# Do NOT use /sbin/nologin (that disables login!)
-
 breakglass_home: "/home/breakglass"
-# The home directory path for the user.
-# This is where:
-# - User's personal files are stored
-# - The .ssh directory with authorized_keys lives
-
 breakglass_comment: "Break-Glass Emergency Account"
-# A description of the account (stored in GECOS field).
-# This appears in /etc/passwd and helps identify the account's purpose.
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # GROUP MEMBERSHIP
-# ============================================================================
+# ----------------------------------------------------------------------------
 
 breakglass_groups:
   - wheel
-# Additional groups the user should belong to.
-# "wheel" is the standard group for sudo access on RHEL/CentOS/Fedora.
-# On Debian/Ubuntu, you would use "sudo" instead.
-# The user will be able to run "sudo" commands with these groups.
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # COMPLIANCE CHECK THRESHOLDS
-# ============================================================================
+# ----------------------------------------------------------------------------
 
 breakglass_min_uid: 1000
-# Minimum acceptable UID for the break-glass account.
-# UIDs below 1000 are typically reserved for system accounts.
-# If the actual UID is below this, the check fails.
-
 breakglass_max_uid: 65534
-# Maximum acceptable UID for the break-glass account.
-# UID 65534 is often used for "nobody" on some systems.
-# UID 65535 has special meaning in some contexts.
-# If the actual UID is above this, the check fails.
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # PASSWORD POLICY
-# ============================================================================
-# These settings control password aging via the 'chage' command.
+# ----------------------------------------------------------------------------
 
-breakglass_password_max_age: -1
-# Maximum days before password must be changed.
-# -1 = password NEVER expires (required for emergency account!)
-# Any positive number would require password changes.
-
+breakglass_password_max_age: -1   # -1 = never expires
 breakglass_password_min_age: 0
-# Minimum days before password CAN be changed.
-# 0 = can change password at any time.
-# Positive numbers prevent frequent password changes.
-
 breakglass_password_warn_age: 7
-# Days before expiration to warn the user.
-# Since our password never expires (-1), this is not relevant.
-# Kept at standard value of 7 days for completeness.
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # SSH CONFIGURATION
-# ============================================================================
+# ----------------------------------------------------------------------------
 
 breakglass_ssh_key_required: true
-# Whether the compliance check should verify SSH keys are configured.
-# true = fail if authorized_keys is missing
-# false = skip the SSH key check
-
 breakglass_ssh_dir_mode: "0700"
-# Permissions for the ~/.ssh directory.
-# 0700 = owner can read/write/execute, no access for group/others.
-# SSH requires strict permissions - looser permissions will cause SSH to fail!
-
 breakglass_authorized_keys_mode: "0600"
-# Permissions for the ~/.ssh/authorized_keys file.
-# 0600 = owner can read/write, no access for group/others.
-# SSH requires strict permissions on this file.
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # REPORT SETTINGS
-# ============================================================================
+# ----------------------------------------------------------------------------
 
 compliance_report_path: "/tmp/breakglass_compliance_report.json"
-# Where to save the compliance report on each target host.
-# /tmp is used for demo purposes; in production you might use
-# a more permanent location or ship reports to a central server.
-
 compliance_report_format: "json"
-# Format for the compliance report.
-# Currently only "json" is implemented.
-# The JSON format is ideal for:
-# - Parsing by other tools (EDA, SIEM)
-# - Human readability (with jq or similar)
-
 generate_report: true
-# Whether to generate a compliance report file.
-# true = write report to compliance_report_path
-# false = skip report generation (results only in Ansible output)
 
-# ============================================================================
+# ----------------------------------------------------------------------------
 # REMEDIATION SETTINGS
-# ============================================================================
+# ----------------------------------------------------------------------------
 
 breakglass_create_home: true
-# Whether to create the home directory when creating the user.
-# true = create /home/breakglass if it doesn't exist
-# false = don't create (user module's create_home parameter)
-
 breakglass_force_password_change: false
-# Whether to force a password change on first login.
-# false = user can log in without changing password (required for emergency!)
-# true = user must change password on first login
-# For a break-glass account, this should be FALSE.
+breakglass_sudo_nopasswd: true
