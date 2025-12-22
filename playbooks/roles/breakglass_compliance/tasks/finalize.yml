@@ -1,5 +1,21 @@
+# ============================================================================
+# FINALIZE COMPLIANCE STATUS
+# ============================================================================
+# This task calculates the final overall compliance status.
+#
+# After all individual checks have run, this task:
+# 1. Looks at all check results
+# 2. Determines if ANY check failed
+# 3. Sets the final "compliant" value to true (all passed) or false (any failed)
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Final compliance evaluation
+  # Calculate the final compliance status based on all check results.
+
   set_fact:
     compliance:
       "{{ compliance | combine({
@@ -11,3 +27,46 @@
           | list
           | length == 0
       }) }}"
+    # This complex expression determines if ALL checks passed.
+    #
+    # STEP BY STEP BREAKDOWN:
+    #
+    # 1. "compliance.checks" - the dictionary of all check results
+    #    Example:
+    #    {
+    #      "user_exists": {"passed": true, "message": "..."},
+    #      "uid": {"passed": true, "message": "..."},
+    #      "ssh_keys": {"passed": false, "message": "..."}
+    #    }
+    #
+    # 2. "| dict2items" - convert dictionary to list of key-value pairs
+    #    Result:
+    #    [
+    #      {"key": "user_exists", "value": {"passed": true, "message": "..."}},
+    #      {"key": "uid", "value": {"passed": true, "message": "..."}},
+    #      {"key": "ssh_keys", "value": {"passed": false, "message": "..."}}
+    #    ]
+    #
+    # 3. "| map(attribute='value.passed')" - extract just the "passed" values
+    #    Result: [true, true, false]
+    #
+    # 4. "| select('equalto', false)" - keep only items equal to false
+    #    Result: [false]  (only the failed checks)
+    #
+    # 5. "| list" - convert to a list (required after select)
+    #
+    # 6. "| length == 0" - check if the list is empty
+    #    - If empty (no failures): compliant = true
+    #    - If not empty (has failures): compliant = false
+    #
+    # EXAMPLE - ALL PASS:
+    # passed values: [true, true, true]
+    # after select('equalto', false): []
+    # length == 0: true
+    # compliant: true
+    #
+    # EXAMPLE - ONE FAIL:
+    # passed values: [true, true, false]
+    # after select('equalto', false): [false]
+    # length == 0: false
+    # compliant: false

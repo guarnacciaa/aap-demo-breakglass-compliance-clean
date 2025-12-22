@@ -1,8 +1,49 @@
+# ============================================================================
+# INITIALIZATION TASK
+# ============================================================================
+# This task creates the data structure used to track compliance results.
+# It runs at the beginning of the compliance check process.
+#
+# The "compliance" variable is a dictionary (key-value structure) that will
+# store the results of all checks performed during the compliance run.
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Initialize compliance structure
+  # Human-readable description of what this task does.
+
   set_fact:
+    # "set_fact" is an Ansible module that creates or updates variables.
+    # Variables created with set_fact persist for the rest of the play.
+    # Unlike "vars", these are dynamic and can be modified later.
+
     compliance:
+      # Create a dictionary (object) called "compliance" with these keys:
+
       host: "{{ inventory_hostname }}"
+      # "host" stores the name of the current host being checked.
+      # "inventory_hostname" is a built-in Ansible variable containing
+      # the name of the host as defined in the inventory.
+
       timestamp: "{{ ansible_date_time.iso8601 }}"
+      # "timestamp" stores when the check was performed.
+      # "ansible_date_time.iso8601" is a fact collected by Ansible
+      # during "gather_facts". It contains the current date/time
+      # in ISO 8601 format (e.g., "2025-01-15T10:30:00Z").
+
       compliant: true
+      # "compliant" starts as true (assume compliant until proven otherwise).
+      # Each check can set this to false if it fails.
+      # The finalize task will calculate the final value.
+
       checks: {}
+      # "checks" is an empty dictionary that will store results of each check.
+      # Each check will add its result here, for example:
+      # {
+      #   "user_exists": {"passed": true, "message": "User exists"},
+      #   "uid": {"passed": true, "message": "UID compliant (1999)"},
+      #   ...
+      # }

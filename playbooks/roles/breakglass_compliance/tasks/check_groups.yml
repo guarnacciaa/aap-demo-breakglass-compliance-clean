@@ -1,14 +1,73 @@
+# ============================================================================
+# GROUP MEMBERSHIP CHECK
+# ============================================================================
+# This task checks if the break-glass user belongs to all required groups.
+#
+# WHY THIS MATTERS:
+# - The "wheel" group typically grants sudo privileges on RHEL/CentOS
+# - Without proper group membership, the user may not have admin rights
+# - An emergency account needs full system access to be effective
+#
+# REQUIRED GROUPS: ["wheel"] (configurable in defaults/main.yml)
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Get user groups
+  # Get all groups the user belongs to.
+
   ansible.builtin.command: "id -nG {{ breakglass_username }}"
+  # "id -nG <username>" lists all group NAMES the user belongs to.
+  # Example output: "breakglass wheel"
+  # (The user is in their primary group "breakglass" and "wheel" group)
+
   register: user_groups_result
+  # Save output to "user_groups_result".
+  # user_groups_result.stdout = "breakglass wheel"
+  #
+  # NOTE: We use "user_groups_result" instead of "groups" because
+  # "groups" is a RESERVED variable in Ansible that contains
+  # inventory group information. Using it would cause conflicts!
+
   changed_when: false
+  # Read-only command, never reports as "changed".
+
 
 - name: Evaluate group membership
+  # Find which required groups are missing.
+
   set_fact:
     missing_groups: "{{ breakglass_groups | difference(user_groups_result.stdout.split()) }}"
+    # Calculate which groups are missing.
+    #
+    # BREAKDOWN:
+    # 1. "breakglass_groups" - list of required groups from defaults/main.yml
+    #    Example: ["wheel"]
+    #
+    # 2. "user_groups_result.stdout" - string of actual groups
+    #    Example: "breakglass wheel"
+    #
+    # 3. ".split()" - Python/Jinja2 method that splits a string into a list
+    #    "breakglass wheel".split() = ["breakglass", "wheel"]
+    #
+    # 4. "| difference(...)" - Jinja2 filter that returns items in the first
+    #    list that are NOT in the second list.
+    #    ["wheel"] | difference(["breakglass", "wheel"]) = []
+    #
+    # EXAMPLE - PASS:
+    # Required: ["wheel"], Actual: ["breakglass", "wheel"]
+    # missing_groups = [] (empty, all groups present)
+    #
+    # EXAMPLE - FAIL:
+    # Required: ["wheel"], Actual: ["breakglass"]
+    # missing_groups = ["wheel"] (wheel is missing)
+
 
 - name: Record group compliance
+  # Add the group check result to our compliance data structure.
+
   set_fact:
     compliance: >-
       {{
@@ -26,3 +85,15 @@
           'compliant': compliance.compliant and (missing_groups | length == 0)
         })
       }}
+    # Check if all required groups are present.
+    #
+    # FILTERS USED:
+    # - "| length" - returns the number of items in a list
+    #   [] | length = 0
+    #   ["wheel"] | length = 1
+    #
+    # - "| join(', ')" - joins list items into a string with separator
+    #   ["wheel", "admin"] | join(', ') = "wheel, admin"
+    #
+    # PASS: missing_groups is empty, passed=true
+    # FAIL: missing_groups has items, passed=false, message shows which groups

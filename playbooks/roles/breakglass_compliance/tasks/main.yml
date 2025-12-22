@@ -1,41 +1,113 @@
+# ============================================================================
+# MAIN TASK FILE - COMPLIANCE CHECK ORCHESTRATION
+# ============================================================================
+# This is the entry point for the breakglass_compliance role.
+# It orchestrates all compliance checks in a specific order.
+#
+# FLOW:
+# 1. Initialize the compliance data structure
+# 2. Check if user exists (required for all other checks)
+# 3. If user exists, run additional checks:
+#    - UID range
+#    - Shell configuration
+#    - Home directory
+#    - Group membership
+#    - Password expiration
+#    - SSH keys
+# 4. Finalize compliance status
+# 5. Generate report
+#
+# ============================================================================
+
 ---
-# Main orchestration for break-glass compliance
+# Beginning of YAML document
 
-# Initialization
+#
+# STEP 1: INITIALIZATION
+# Create the data structure to store compliance results
+#
 - include_tasks: init.yml
+  # "include_tasks" dynamically includes another task file.
+  # This runs the tasks defined in init.yml.
+  # It creates an empty compliance dictionary to store results.
 
-# User existence check
+#
+# STEP 2: USER EXISTENCE CHECK (Required)
+# All other checks depend on the user existing
+#
 - include_tasks: check_user.yml
+  # Check if the break-glass user exists in /etc/passwd.
+  # Sets the variable "breakglass_user_exists" to true or false.
 
-# UID check (solo se l’utente esiste)
+#
+# STEP 3: UID CHECK
+# Verify the user ID is in an acceptable range
+#
 - include_tasks: check_uid.yml
   when: breakglass_user_exists
+  # "when" is a conditional. This task only runs IF the condition is true.
+  # We only check UID if the user exists (otherwise 'id' command would fail).
 
-# Shell check (solo se l’utente esiste)
+#
+# STEP 4: SHELL CHECK
+# Verify the user's login shell is correctly configured
+#
 - include_tasks: check_shell.yml
   when: breakglass_user_exists
+  # Only run if user exists.
 
-# Home directory check (solo se l’utente esiste)
+#
+# STEP 5: HOME DIRECTORY CHECK
+# Verify the user's home directory exists
+#
 - include_tasks: check_home.yml
   when: breakglass_user_exists
+  # Only run if user exists.
 
-# Group membership check (solo se l’utente esiste)
+#
+# STEP 6: GROUP MEMBERSHIP CHECK
+# Verify the user belongs to required groups (like 'wheel' for sudo)
+#
 - include_tasks: check_groups.yml
   when: breakglass_user_exists
+  # Only run if user exists.
 
-# Password aging check (solo se l’utente esiste)
+#
+# STEP 7: PASSWORD EXPIRATION CHECK
+# Verify the password is set to never expire
+#
 - include_tasks: check_password.yml
   when: breakglass_user_exists
+  # Only run if user exists.
 
-# SSH key check (solo se richiesto e se l’utente esiste)
+#
+# STEP 8: SSH AUTHORIZED KEYS CHECK
+# Verify SSH public key is configured for the user
+#
 - include_tasks: check_ssh.yml
   when:
     - breakglass_user_exists
     - breakglass_ssh_key_required | default(true)
+  # "when" can have multiple conditions (AND logic).
+  # This runs if:
+  # 1. User exists AND
+  # 2. SSH key checking is required (default: true)
+  #
+  # The "| default(true)" filter provides a fallback value
+  # if breakglass_ssh_key_required is not defined.
 
-# Finalize compliance results
+#
+# STEP 9: FINALIZE
+# Calculate the overall compliance status
+#
 - include_tasks: finalize.yml
+  # Analyzes all check results and sets final compliant=true/false.
 
-# Generate compliance report (opzionale)
+#
+# STEP 10: GENERATE REPORT
+# Write a JSON compliance report to a file
+#
 - include_tasks: report.yml
   when: generate_report | default(true)
+  # Only generate report if generate_report is true (default: true).
+  # The report is written to /tmp/breakglass_compliance_report.json

@@ -1,10 +1,47 @@
+# ============================================================================
+# SSH AUTHORIZED KEYS CHECK
+# ============================================================================
+# This task checks if the break-glass user has SSH keys configured.
+#
+# WHY THIS MATTERS:
+# - SSH keys provide secure, password-less authentication
+# - During an emergency, you may need quick access without typing passwords
+# - The authorized_keys file must exist for SSH key login to work
+#
+# WHAT WE CHECK:
+# - The file ~/.ssh/authorized_keys exists
+# - (We don't verify the specific key content, just that the file exists)
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Check authorized_keys
+  # Check if the authorized_keys file exists.
+
   ansible.builtin.stat:
     path: "{{ breakglass_home }}/.ssh/authorized_keys"
+  # Use the "stat" module to get file information.
+  #
+  # PATH BREAKDOWN:
+  # - "breakglass_home" = "/home/breakglass" (from defaults/main.yml)
+  # - ".ssh" = hidden directory for SSH configuration
+  # - "authorized_keys" = file containing allowed public keys
+  #
+  # Full path: "/home/breakglass/.ssh/authorized_keys"
+  #
+  # SSH uses this file to verify who can log in with key authentication.
+  # Each line contains one public key that is allowed to log in.
+
   register: auth_keys
+  # Save result to "auth_keys".
+  # auth_keys.stat.exists = true if file exists, false otherwise.
+
 
 - name: Record SSH compliance
+  # Add the SSH check result to our compliance data structure.
+
   set_fact:
     compliance: >-
       {{
@@ -22,3 +59,15 @@
           'compliant': compliance.compliant and auth_keys.stat.exists
         })
       }}
+    # Record whether SSH authorized_keys file exists.
+    #
+    # PASS: File exists
+    # - passed: true
+    # - message: "SSH keys configured"
+    #
+    # FAIL: File does not exist
+    # - passed: false
+    # - message: "SSH authorized_keys missing"
+    #
+    # NOTE: We only check if the file EXISTS, not if it contains valid keys.
+    # A more thorough check could verify specific key content.

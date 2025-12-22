@@ -1,15 +1,74 @@
+# ============================================================================
+# USER EXISTENCE CHECK
+# ============================================================================
+# This task checks if the break-glass user account exists on the system.
+# This is the most fundamental check - if the user doesn't exist,
+# all other checks will be skipped.
+#
+# HOW IT WORKS:
+# 1. Query the passwd database using the 'getent' module
+# 2. Check if the user was found in the results
+# 3. Record the result in the compliance data structure
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Check if break-glass user exists
+  # Query the system's user database to find our break-glass user.
+
   ansible.builtin.getent:
+    # "getent" is a module that queries system databases like passwd, group, etc.
+    # It's the Ansible equivalent of the Linux "getent" command.
+
     database: passwd
+    # Query the "passwd" database, which contains user account information.
+    # This is equivalent to reading /etc/passwd.
+
     key: "{{ breakglass_username }}"
+    # Look for a specific user by username.
+    # "breakglass_username" comes from defaults/main.yml (default: "breakglass").
+    # The "{{ }}" syntax inserts the variable value.
+
   failed_when: false
+  # "failed_when" controls when Ansible considers a task as "failed".
+  # Setting it to "false" means this task NEVER fails, even if the user
+  # doesn't exist. Normally, getent fails if the user is not found.
+  # We want to handle "user not found" gracefully, not as an error.
+
 
 - name: Set user existence flag
+  # Create a boolean variable indicating if the user exists.
+
   set_fact:
+    # "set_fact" creates a variable that persists for this play.
+
     breakglass_user_exists: "{{ ansible_facts.getent_passwd is defined and ansible_facts.getent_passwd[breakglass_username] is defined }}"
+    # This complex expression evaluates to true or false.
+    #
+    # BREAKDOWN:
+    # 1. "ansible_facts.getent_passwd" - The getent module stores its results
+    #    in ansible_facts.getent_passwd (not in the registered variable!).
+    #
+    # 2. "is defined" - Jinja2 test that checks if a variable exists.
+    #
+    # 3. "ansible_facts.getent_passwd[breakglass_username]" - Access the
+    #    user's entry in the passwd data by username.
+    #
+    # 4. "and" - Both conditions must be true.
+    #
+    # If user "breakglass" exists, ansible_facts.getent_passwd looks like:
+    # {
+    #   "breakglass": ["x", "1999", "1999", "Break-Glass...", "/home/breakglass", "/bin/bash"]
+    # }
+    #
+    # If user doesn't exist, getent_passwd might be undefined or empty.
+
 
 - name: Record user existence check
+  # Add the check result to our compliance data structure.
+
   set_fact:
     compliance: >-
       {{
@@ -27,3 +86,30 @@
           'compliant': compliance.compliant and breakglass_user_exists
         })
       }}
+    # This is a complex Jinja2 expression. Let's break it down:
+    #
+    # YAML SYNTAX:
+    # - ">-" means this is a multi-line string, folded into one line,
+    #   with no trailing newline.
+    # - "{{ }}" contains the Jinja2 expression to evaluate.
+    #
+    # JINJA2 FILTERS:
+    # - "compliance | combine({...})" - The "combine" filter merges two
+    #   dictionaries. It takes the existing "compliance" dict and adds/updates
+    #   keys from the new dict.
+    #
+    # WHAT THIS DOES:
+    # 1. Takes the existing "compliance" dictionary
+    # 2. Updates it with new data:
+    #    - Adds "user_exists" to the "checks" dictionary
+    #    - Updates "compliant" based on this check result
+    #
+    # THE "ternary" FILTER:
+    # - Works like: condition | ternary(value_if_true, value_if_false)
+    # - If breakglass_user_exists is true: returns "User exists"
+    # - If breakglass_user_exists is false: returns "User does not exist"
+    #
+    # THE "and" OPERATOR:
+    # - "compliance.compliant and breakglass_user_exists"
+    # - If either is false, the result is false.
+    # - This ensures that if ANY check fails, compliant becomes false.

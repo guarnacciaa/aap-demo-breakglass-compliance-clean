@@ -1,7 +1,26 @@
+# ============================================================================
+# COMPLIANCE REPORT GENERATION
+# ============================================================================
+# This task generates a JSON compliance report file on the target host.
+#
+# THE REPORT INCLUDES:
+# - Hostname of the checked system
+# - Username being checked
+# - Timestamp of the check
+# - All individual check results
+# - Overall compliance status
+# - Summary of any failures
+#
+# OUTPUT LOCATION: /tmp/breakglass_compliance_report.json (configurable)
+#
+# ============================================================================
+
 ---
-# Generate break-glass compliance report
+# Beginning of YAML document
 
 - name: Build compliance summary
+  # Create a list of failure messages for easy viewing.
+
   set_fact:
     compliance_summary: >-
       {{
@@ -11,10 +30,43 @@
         | map(attribute='value.message')
         | list
       }}
+    # Extract messages from all FAILED checks.
+    #
+    # STEP BY STEP:
+    #
+    # 1. "compliance.checks" - dictionary of all check results
+    #
+    # 2. "| dict2items" - convert to list of {key, value} pairs
+    #
+    # 3. "| selectattr('value.passed', 'equalto', false)"
+    #    Filter to keep only items where value.passed equals false
+    #    This gives us only the failed checks.
+    #
+    # 4. "| map(attribute='value.message')"
+    #    Extract just the message from each failed check.
+    #
+    # 5. "| list" - convert to a list
+    #
+    # EXAMPLE:
+    # If ssh_keys check failed:
+    # compliance_summary = ["SSH authorized_keys missing"]
+    #
+    # If all passed:
+    # compliance_summary = []
+
 
 - name: Write compliance report to file
+  # Save the complete compliance report as a JSON file.
+
   ansible.builtin.copy:
+    # "copy" module can copy files OR create files with specific content.
+    # Here we use it to create a file with the content we specify.
+
     dest: "{{ compliance_report_path | default('/tmp/breakglass_compliance_report.json') }}"
+    # Destination path for the report file.
+    # Uses compliance_report_path from defaults/main.yml,
+    # or falls back to /tmp/breakglass_compliance_report.json.
+
     content: >-
       {{
         {
@@ -26,4 +78,28 @@
           'summary': compliance_summary
         } | to_nice_json
       }}
+    # The content is a JSON object with all compliance data.
+    #
+    # STRUCTURE:
+    # {
+    #   "hostname": "rhel-server-01",
+    #   "user": "breakglass",
+    #   "timestamp": "2025-01-15T10:30:00Z",
+    #   "checks": {
+    #     "user_exists": {"passed": true, "message": "..."},
+    #     "uid": {"passed": true, "message": "..."},
+    #     ...
+    #   },
+    #   "compliant": true,
+    #   "summary": []
+    # }
+    #
+    # "| to_nice_json" - Jinja2 filter that formats the dictionary
+    # as pretty-printed JSON (with indentation for readability).
+
     mode: "0644"
+    # File permissions in octal:
+    # - Owner: read + write (6)
+    # - Group: read (4)
+    # - Others: read (4)
+    # This makes the file readable by anyone on the system.

@@ -1,10 +1,45 @@
+# ============================================================================
+# HOME DIRECTORY CHECK
+# ============================================================================
+# This task checks if the break-glass user's home directory exists.
+#
+# WHY THIS MATTERS:
+# - The home directory is where user files and SSH keys are stored
+# - Without a home directory, SSH key authentication won't work
+# - The ~/.ssh/authorized_keys file must be in the home directory
+#
+# EXPECTED PATH: /home/breakglass (configurable in defaults/main.yml)
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Check home directory
+  # Check if the home directory path exists on the filesystem.
+
   ansible.builtin.stat:
     path: "{{ breakglass_home }}"
+  # "stat" module retrieves information about a file or directory.
+  # It's similar to the Linux "stat" command.
+  #
+  # "breakglass_home" comes from defaults/main.yml (default: "/home/breakglass").
+  #
+  # The stat module returns detailed info like:
+  # - exists: true/false - does the path exist?
+  # - isdir: true/false - is it a directory?
+  # - mode: permissions (e.g., "0755")
+  # - owner: owner username
+  # - size: size in bytes
+
   register: home
+  # Save the result to variable "home".
+  # We'll use "home.stat.exists" to check if it exists.
+
 
 - name: Record home directory check
+  # Add the home directory check result to our compliance data structure.
+
   set_fact:
     compliance: >-
       {{
@@ -22,3 +57,14 @@
           'compliant': compliance.compliant and home.stat.exists
         })
       }}
+    # Check if the home directory exists.
+    #
+    # "home.stat.exists" is a boolean:
+    # - true: directory exists
+    # - false: directory does not exist
+    #
+    # RESULT:
+    # compliance.checks.home = {
+    #   "passed": true,  (or false)
+    #   "message": "Home directory exists"  (or "Home directory missing")
+    # }

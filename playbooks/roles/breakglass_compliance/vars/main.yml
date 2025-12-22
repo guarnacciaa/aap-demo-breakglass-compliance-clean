@@ -1,32 +1,82 @@
----
-# Internal variables for breakglass_compliance role
-# These are computed/derived values used internally
+# ============================================================================
+# BREAK-GLASS COMPLIANCE ROLE - INTERNAL VARIABLES
+# ============================================================================
+# This file contains internal variables used by the role.
+# These are NOT meant to be overridden by users.
+#
+# DIFFERENCE FROM defaults/main.yml:
+# - defaults/ = user-configurable settings, low precedence
+# - vars/ = internal constants, higher precedence than defaults
+#
+# Variables in vars/main.yml have higher precedence and are typically
+# used for values that should not be changed or are computed internally.
+#
+# ============================================================================
 
-# Compliance status tracking
+---
+# Beginning of YAML document
+
+# ============================================================================
+# COMPLIANCE STATUS TRACKING
+# ============================================================================
+# This list defines all the compliance checks performed by the role.
+# It's used for documentation and could be used for dynamic check generation.
+
 _compliance_checks:
+  # The underscore prefix (_) is a convention indicating this is a
+  # "private" or internal variable, not meant to be used externally.
+
   - name: "account_exists"
     description: "Break-glass account exists"
+    # Verifies the user is present in /etc/passwd
+
   - name: "uid_valid"
     description: "UID is within valid range"
+    # Verifies UID is between min and max thresholds
+
   - name: "shell_valid"
     description: "Shell is set correctly"
+    # Verifies the login shell matches expected value
+
   - name: "home_exists"
     description: "Home directory exists"
+    # Verifies /home/breakglass directory exists
+
   - name: "account_not_locked"
     description: "Account is not locked"
+    # Verifies the account can be used for login
+
   - name: "password_not_expired"
     description: "Password is not expired"
+    # Verifies password aging is set to never expire
+
   - name: "ssh_key_configured"
     description: "SSH authorized keys configured"
+    # Verifies authorized_keys file exists
 
-# Valid shells for break-glass account
+# ============================================================================
+# VALID SHELLS
+# ============================================================================
+# List of shells considered valid for a break-glass account.
+# Currently not used in checks (we check for exact match with breakglass_shell),
+# but could be used for more flexible validation.
+
 _valid_shells:
   - "/bin/bash"
+  # Bourne Again SHell - most common default shell
+
   - "/bin/sh"
+  # Bourne Shell - minimal POSIX shell
+
   - "/bin/zsh"
+  # Z Shell - popular alternative with advanced features
 
-# Password status indicators (from chage output)
+# ============================================================================
+# PASSWORD STATUS INDICATORS
+# ============================================================================
+# Constants used when parsing 'chage' command output.
+
 _password_never_expires: -1
-
-
-
+# In password aging, -1 means "never".
+# When chage reports "Maximum days between password change: -1",
+# it means the password will never expire.

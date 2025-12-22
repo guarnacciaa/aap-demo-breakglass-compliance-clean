@@ -1,10 +1,49 @@
+# ============================================================================
+# SHELL CHECK
+# ============================================================================
+# This task checks if the break-glass user's login shell is correctly set.
+#
+# WHY THIS MATTERS:
+# - The shell must be a valid, interactive shell (like /bin/bash)
+# - Some security hardening might set shell to /sbin/nologin to disable login
+# - An emergency account MUST have a valid shell to be usable
+#
+# EXPECTED SHELL: /bin/bash (configurable in defaults/main.yml)
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Get user shell
+  # Extract the user's shell from the passwd database.
+
   ansible.builtin.shell: "getent passwd {{ breakglass_username }} | cut -d: -f7"
+  # "shell" module (not "command") allows shell features like pipes (|).
+  #
+  # COMMAND BREAKDOWN:
+  # - "getent passwd breakglass" gets the passwd entry for the user
+  #   Output: "breakglass:x:1999:1999:Break-Glass Emergency Account:/home/breakglass:/bin/bash"
+  #
+  # - "cut -d: -f7" extracts field 7 using ":" as delimiter
+  #   Fields: 1=username, 2=password, 3=uid, 4=gid, 5=comment, 6=home, 7=shell
+  #   Output: "/bin/bash"
+  #
+  # WHY SHELL MODULE?
+  # - The "command" module runs commands directly without a shell.
+  # - The "|" (pipe) is a shell feature, so we need the "shell" module.
+
   register: shell
+  # Save output to variable "shell".
+  # shell.stdout will contain "/bin/bash" (or whatever the shell is).
+
   changed_when: false
+  # This read-only command doesn't change anything.
+
 
 - name: Record shell check
+  # Add the shell check result to our compliance data structure.
+
   set_fact:
     compliance: >-
       {{
@@ -12,7 +51,7 @@
           'checks': compliance.checks | combine({
             'shell': {
               'passed': shell.stdout == breakglass_shell,
-              'message': shell.stdout == breakglass_shell
+              'message': (shell.stdout == breakglass_shell)
                 | ternary(
                     'Shell is compliant',
                     'Shell mismatch: ' ~ shell.stdout
@@ -22,3 +61,24 @@
           'compliant': compliance.compliant and (shell.stdout == breakglass_shell)
         })
       }}
+    # Check if the actual shell matches the expected shell.
+    #
+    # COMPARISON:
+    # - "shell.stdout" is the actual shell (e.g., "/bin/bash")
+    # - "breakglass_shell" is the expected shell from defaults/main.yml
+    #
+    # IMPORTANT: PARENTHESES!
+    # - "(shell.stdout == breakglass_shell) | ternary(...)"
+    # - The parentheses are REQUIRED to ensure correct operator precedence.
+    # - Without them, the ternary filter would be applied to breakglass_shell
+    #   first, which would cause incorrect results.
+    #
+    # PASS EXAMPLE:
+    # If shell is "/bin/bash" and expected is "/bin/bash":
+    # - passed: true
+    # - message: "Shell is compliant"
+    #
+    # FAIL EXAMPLE:
+    # If shell is "/sbin/nologin" and expected is "/bin/bash":
+    # - passed: false
+    # - message: "Shell mismatch: /sbin/nologin"

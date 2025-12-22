@@ -1,12 +1,79 @@
+# ============================================================================
+# AAP CONFIGURATION PLAYBOOK (Configuration as Code)
+# ============================================================================
+# This playbook automatically configures Red Hat Ansible Automation Platform
+# (AAP) using the "Configuration as Code" (CasC) approach.
+#
+# WHAT IT DOES:
+# - Reads configuration from YAML files in group_vars/all/
+# - Creates organizations, projects, inventories, credentials, job templates,
+#   users, teams, and roles in AAP automatically
+#
+# HOW TO RUN:
+#   ansible-playbook playbooks/aap_config.yml
+#
+# ============================================================================
+
 ---
+# The "---" marks the beginning of a YAML document.
+# Everything below defines an Ansible playbook.
+
+# A playbook is a list of "plays". Each play starts with a "-" (dash).
+# This playbook has one play.
+
 - name: Configure AAP Demo Environment (CasC)
+  # "name" is a human-readable description of what this play does.
+  # It will be shown in the output when the playbook runs.
+
   hosts: all
+  # "hosts" specifies which machines to run this play on.
+  # "all" means all hosts defined in the inventory.
+  # In this case, it targets the AAP Controller.
+
   gather_facts: false
+  # "gather_facts" controls whether Ansible collects system information
+  # (like OS type, IP addresses, etc.) from the target hosts.
+  # We set it to "false" because we don't need that info for this playbook.
+  # This makes the playbook run faster.
+
   vars_files:
     - ../vault.yml
+  # "vars_files" loads variables from external files.
+  # "../vault.yml" contains sensitive data like passwords.
+  # The "../" means "go up one directory" (from playbooks/ to the root).
+  # This file should be encrypted with ansible-vault for security.
+
   connection: local
+  # "connection" specifies how Ansible connects to the target.
+  # "local" means run on the local machine (the bastion/control node).
+  # We use this because we're making API calls to AAP, not SSH connections.
+
   tasks:
+    # "tasks" is a list of actions to perform on the target hosts.
+    # Each task has a "name" and a module (like "include_role").
+
     - name: Call dispatch role
+      # This task includes (runs) a role from the infra.aap_configuration collection.
+
       ansible.builtin.include_role:
         name: infra.aap_configuration.dispatch
+      # "ansible.builtin.include_role" is a module that runs an Ansible role.
+      # A role is a reusable set of tasks packaged together.
+      #
+      # "infra.aap_configuration.dispatch" is a role from the
+      # "infra.aap_configuration" collection that:
+      # 1. Reads all the YAML files in group_vars/all/
+      # 2. Detects what AAP objects are defined (organizations, projects, etc.)
+      # 3. Creates or updates those objects in AAP via its REST API
+      #
+      # The role automatically picks up variables like:
+      # - aap_organizations (from organizations.yml)
+      # - controller_projects (from projects.yml)
+      # - controller_inventories (from inventories.yml)
+      # - controller_credentials (from credentials.yml)
+      # - controller_templates (from job_templates.yml)
+      # - aap_user_accounts (from users.yml)
+      # - aap_teams (from teams.yml)
+      # - controller_roles (from roles.yml)
 ...
+# The "..." marks the end of the YAML document (optional but good practice).

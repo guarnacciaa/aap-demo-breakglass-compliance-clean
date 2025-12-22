@@ -1,80 +1,243 @@
+# ============================================================================
+# BREAK-GLASS ACCOUNT REMEDIATION TASKS
+# ============================================================================
+# This file contains tasks to CREATE or FIX the break-glass emergency account.
+#
+# ⚠️  WARNING: This makes CHANGES to the target system!
+#
+# WHAT IT DOES:
+# 1. Creates the primary group for the user
+# 2. Creates the user account (or updates if exists)
+# 3. Configures password aging (never expires)
+# 4. Creates .ssh directory with secure permissions
+# 5. Deploys SSH authorized key for secure access
+# 6. Unlocks the account if locked
+# 7. Configures passwordless sudo access
+#
+# ============================================================================
+
 ---
-# Break-Glass Account Remediation Tasks
+# Beginning of YAML document
 
 - name: Ensure break-glass primary group exists
+  # Create the primary group for the break-glass user.
+
   ansible.builtin.group:
+    # "group" module manages Linux groups.
+
     name: "{{ breakglass_username }}"
+    # Group name matches the username (standard Linux practice).
+    # Default: "breakglass"
+
     gid: "{{ breakglass_gid | default(omit) }}"
+    # Group ID. The "| default(omit)" means:
+    # - If breakglass_gid is defined: use that value (e.g., 1999)
+    # - If not defined: omit this parameter (let system assign)
+
     state: present
+    # "present" = create if doesn't exist, do nothing if exists
+    # "absent" = delete if exists
+
 
 - name: Ensure break-glass user exists
+  # Create the user account with all required settings.
+
   ansible.builtin.user:
+    # "user" module manages Linux user accounts.
+
     name: "{{ breakglass_username }}"
+    # Username for the account. Default: "breakglass"
+
     uid: "{{ breakglass_uid | default(omit) }}"
+    # User ID. Default: 1999. Uses omit pattern like group.
+
     group: "{{ breakglass_username }}"
+    # Primary group for the user (created in previous task).
+
     groups: "{{ breakglass_groups | default([]) }}"
+    # Additional groups the user should belong to.
+    # Default: ["wheel"] for sudo access.
+    # "| default([])" provides empty list if undefined.
+
     shell: "{{ breakglass_shell }}"
+    # Login shell. Default: "/bin/bash"
+
     home: "{{ breakglass_home }}"
+    # Home directory path. Default: "/home/breakglass"
+
     comment: "{{ breakglass_comment }}"
+    # User description (GECOS field). Default: "Break-Glass Emergency Account"
+
     create_home: "{{ breakglass_create_home | bool }}"
+    # Create home directory if it doesn't exist.
+    # "| bool" ensures the value is boolean (true/false).
+
     password: "{{ breakglass_password | password_hash('sha512') if breakglass_password is defined else omit }}"
+    # Set the user's password.
+    #
+    # IMPORTANT: The "password" parameter requires a HASHED password!
+    # - "breakglass_password" contains the plain-text password
+    # - "| password_hash('sha512')" hashes it using SHA-512 algorithm
+    #
+    # The conditional "if ... else omit" means:
+    # - If password is defined: hash it and set it
+    # - If not defined: don't change the password (omit)
+
     state: present
+    # Ensure user exists.
+
   register: breakglass_user_result
+  # Save the result to check if user was created or updated.
+
 
 - name: Configure password aging policy
+  # Set password to never expire.
+
   ansible.builtin.command: >
     chage
     -M {{ breakglass_password_max_age }}
     -m {{ breakglass_password_min_age }}
     -W {{ breakglass_password_warn_age }}
     {{ breakglass_username }}
+  # "chage" command modifies password aging settings.
+  #
+  # OPTIONS:
+  # -M = Maximum days between password changes (-1 = never expires)
+  # -m = Minimum days between password changes (0 = can change anytime)
+  # -W = Warning days before expiration (7 = warn 7 days before)
+  #
+  # Default values make password NEVER expire.
+
   changed_when: true
+  # Always report as "changed" since we can't easily detect if
+  # the settings actually changed.
+
   when: breakglass_password_max_age is defined
+  # Only run if password aging variables are defined.
+
 
 - name: Ensure .ssh directory exists
+  # Create the .ssh directory with secure permissions.
+
   ansible.builtin.file:
+    # "file" module manages files and directories.
+
     path: "{{ breakglass_home }}/.ssh"
+    # Path: /home/breakglass/.ssh
+
     state: directory
+    # "directory" = create as directory if doesn't exist
+
     owner: "{{ breakglass_username }}"
+    # Set owner to the break-glass user
+
     group: "{{ breakglass_username }}"
+    # Set group to the break-glass user's group
+
     mode: "{{ breakglass_ssh_dir_mode }}"
+    # Permissions. Default: "0700" (owner can read/write/execute, no one else)
+    # SSH requires strict permissions on .ssh directory!
+
 
 - name: Configure SSH authorized key
+  # Deploy the SSH public key for secure access.
+
   ansible.posix.authorized_key:
+    # "authorized_key" module from ansible.posix collection.
+    # Manages entries in ~/.ssh/authorized_keys file.
+
     user: "{{ breakglass_username }}"
+    # Which user's authorized_keys to modify
+
     key: "{{ breakglass_ssh_pub_key }}"
+    # The SSH public key to add.
+    # This comes from files/breakglass_id_rsa.pub via the playbook.
+
     state: present
+    # Add the key (don't remove)
+
     exclusive: false
+    # false = add this key, keep existing keys
+    # true = remove all other keys (use with caution!)
+
   when:
     - breakglass_ssh_pub_key is defined
     - breakglass_ssh_pub_key | length > 0
+  # Only run if:
+  # 1. The variable is defined
+  # 2. The key is not empty (has content)
+
 
 - name: Ensure authorized_keys permissions
+  # Set secure permissions on the authorized_keys file.
+
   ansible.builtin.file:
     path: "{{ breakglass_home }}/.ssh/authorized_keys"
     owner: "{{ breakglass_username }}"
     group: "{{ breakglass_username }}"
     mode: "{{ breakglass_authorized_keys_mode }}"
+    # Default: "0600" (owner can read/write, no one else)
+    # SSH requires strict permissions on this file!
+
   when:
     - breakglass_ssh_pub_key is defined
     - breakglass_ssh_pub_key | length > 0
+  # Same conditions as the key deployment.
+
 
 - name: Ensure break-glass account is unlocked
+  # Unlock the account in case it was locked.
+
   ansible.builtin.command: "passwd -u {{ breakglass_username }}"
+  # "passwd -u" unlocks a user account.
+  # A locked account cannot log in even with correct password.
+
   changed_when: true
+  # Always report as changed.
+
   failed_when: false
+  # Don't fail if account wasn't locked (command may return error).
+
 
 - name: Ensure passwordless sudo for break-glass user
+  # Allow the user to run sudo without entering a password.
+
   ansible.builtin.lineinfile:
+    # "lineinfile" module manages lines in text files.
+
     path: /etc/sudoers.d/breakglass
+    # Create a separate sudoers file for this user.
+    # Files in /etc/sudoers.d/ are included by the main sudoers.
+
     line: "{{ breakglass_username }} ALL=(ALL) NOPASSWD: ALL"
+    # The sudo rule:
+    # - breakglass = the user
+    # - ALL=(ALL) = from any host, run as any user
+    # - NOPASSWD: = don't require password
+    # - ALL = can run any command
+
     create: true
+    # Create the file if it doesn't exist.
+
     mode: "0440"
+    # Permissions: owner and group can read, no one can write.
+    # sudo requires this exact permission!
+
     validate: "visudo -cf %s"
+    # Before saving, validate the syntax with visudo.
+    # "%s" is replaced with the temp file path.
+    # If validation fails, the file won't be changed.
+
   when: breakglass_sudo_nopasswd | default(true)
+  # Only configure passwordless sudo if enabled (default: true).
+
 
 - name: Display remediation summary
+  # Show a summary of what was done.
+
   ansible.builtin.debug:
+    # "debug" module displays messages in the output.
+
     msg:
       remediation:
         host: "{{ inventory_hostname }}"
@@ -85,3 +248,6 @@
         groups: "{{ breakglass_groups }}"
         ssh_key_configured: "{{ breakglass_ssh_pub_key is defined }}"
         sudo_nopasswd: "{{ breakglass_sudo_nopasswd | default(true) }}"
+    # Display structured information about the remediation.
+    # "breakglass_user_result.changed" tells us if the user module
+    # created a new user or updated an existing one.

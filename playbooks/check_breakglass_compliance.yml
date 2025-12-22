@@ -1,8 +1,65 @@
+# ============================================================================
+# BREAK-GLASS COMPLIANCE CHECK PLAYBOOK
+# ============================================================================
+# This playbook checks if the break-glass emergency account is properly
+# configured on all target Linux hosts.
+#
+# WHAT IT CHECKS:
+# - Does the break-glass user exist?
+# - Is the UID in the valid range (1000-65534)?
+# - Is the shell set correctly (/bin/bash)?
+# - Does the home directory exist?
+# - Is the user in the required groups (wheel)?
+# - Does the password never expire?
+# - Are SSH authorized keys configured?
+#
+# OUTPUT:
+# - A JSON report is written to /tmp/breakglass_compliance_report.json
+#   on each target host
+#
+# HOW TO RUN (from AAP):
+#   Launch the "BreakGlass - Compliance Check" job template
+#
+# HOW TO RUN (from CLI):
+#   ansible-playbook playbooks/check_breakglass_compliance.yml -i inventory.yml
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Break-Glass Account Compliance Check
+  # Human-readable name for this play.
+  # This will appear in AAP job output and CLI output.
+
   hosts: all
+  # Run this play on ALL hosts defined in the inventory.
+  # In a real scenario, this would be all your Linux servers.
+
   gather_facts: true
+  # Collect system information from each target host.
+  # We need this for things like:
+  # - ansible_date_time (current timestamp for the report)
+  # - ansible_facts (populated by the getent module)
+
   become: true
+  # "become" means "become another user" (like sudo).
+  # We need root/sudo privileges to:
+  # - Read /etc/passwd and /etc/shadow
+  # - Check user properties with commands like 'id' and 'chage'
+  # By default, become uses sudo to become root.
 
   roles:
     - breakglass_compliance
+    # "roles" is a list of Ansible roles to execute.
+    #
+    # A role is a reusable bundle of tasks, variables, and files.
+    # The "breakglass_compliance" role is located at:
+    #   playbooks/roles/breakglass_compliance/
+    #
+    # When you include a role, Ansible automatically:
+    # 1. Loads defaults/main.yml (default variable values)
+    # 2. Loads vars/main.yml (internal variables)
+    # 3. Executes tasks/main.yml (the main entry point)
+    #
+    # The role will run all compliance checks and generate a report.

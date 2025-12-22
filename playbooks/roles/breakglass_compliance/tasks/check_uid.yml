@@ -1,18 +1,73 @@
+# ============================================================================
+# UID (User ID) CHECK
+# ============================================================================
+# This task checks if the break-glass user's UID is within an acceptable range.
+#
+# WHY THIS MATTERS:
+# - UIDs below 1000 are typically reserved for system accounts
+# - UIDs 65534+ can have special meaning (nobody, nfsnobody)
+# - A valid UID ensures the account is a regular user account
+#
+# DEFAULT RANGE: 1000 - 65534 (configurable in defaults/main.yml)
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Get user UID
+  # Run a command to get the user's numeric UID.
+
   command: "id -u {{ breakglass_username }}"
+  # "command" module runs a shell command on the target host.
+  # "id -u <username>" returns just the numeric UID of the user.
+  # Example output: "1999"
+
   register: uid
+  # "register" saves the command's output into a variable called "uid".
+  # The variable will contain:
+  # - uid.stdout: the standard output (e.g., "1999")
+  # - uid.stderr: any error output
+  # - uid.rc: return code (0 = success)
+  # - uid.changed: whether the task made changes (always false for command)
+
   changed_when: false
+  # "changed_when" controls when Ansible reports a task as "changed".
+  # Setting it to "false" means this task is always reported as "ok",
+  # never as "changed". This is correct because reading the UID
+  # doesn't modify anything on the system.
+
 
 - name: Evaluate UID compliance
+  # Determine if the UID is within the acceptable range.
+
   set_fact:
     uid_ok: >-
       {{
         uid.stdout | int >= breakglass_min_uid and
         uid.stdout | int <= breakglass_max_uid
       }}
+    # Create a boolean variable "uid_ok" that is true if UID is in range.
+    #
+    # BREAKDOWN:
+    # - "uid.stdout" is the command output (e.g., "1999")
+    # - "| int" is a Jinja2 filter that converts string to integer
+    # - ">=" and "<=" are comparison operators
+    # - "and" requires both conditions to be true
+    #
+    # Variables used:
+    # - breakglass_min_uid: minimum allowed UID (default: 1000)
+    # - breakglass_max_uid: maximum allowed UID (default: 65534)
+    #
+    # Example: "1999" | int = 1999
+    # 1999 >= 1000 = true
+    # 1999 <= 65534 = true
+    # true and true = true
+
 
 - name: Record UID check
+  # Add the UID check result to our compliance data structure.
+
   set_fact:
     compliance: >-
       {{
@@ -30,3 +85,14 @@
           'compliant': compliance.compliant and uid_ok
         })
       }}
+    # Update the compliance dictionary with the UID check result.
+    #
+    # STRING CONCATENATION:
+    # - The "~" operator in Jinja2 concatenates strings.
+    # - 'UID compliant (' ~ uid.stdout ~ ')' produces "UID compliant (1999)"
+    #
+    # RESULT STRUCTURE:
+    # compliance.checks.uid = {
+    #   "passed": true,
+    #   "message": "UID compliant (1999)"
+    # }

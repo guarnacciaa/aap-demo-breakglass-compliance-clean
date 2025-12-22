@@ -1,18 +1,98 @@
+# ============================================================================
+# BREAK-GLASS ACCOUNT REMEDIATION PLAYBOOK
+# ============================================================================
+# This playbook fixes (remediates) any compliance issues with the break-glass
+# emergency account on target Linux hosts.
+#
+# WHAT IT DOES:
+# - Creates the break-glass user if it doesn't exist
+# - Sets the correct UID, shell, and home directory
+# - Adds the user to required groups (wheel for sudo)
+# - Configures password aging policy (never expires)
+# - Deploys SSH authorized keys for secure access
+# - Configures passwordless sudo access
+# - Unlocks the account if it was locked
+#
+# IMPORTANT:
+# - This playbook makes CHANGES to the target systems
+# - Only run after a compliance check shows issues
+# - Requires the SSH public key file to exist in files/
+#
+# HOW TO RUN (from AAP):
+#   Launch the "BreakGlass - Remediation" job template
+#
+# HOW TO RUN (from CLI):
+#   ansible-playbook playbooks/remediate_breakglass.yml -i inventory.yml --ask-vault-pass
+#
+# ============================================================================
+
 ---
+# Beginning of YAML document
+
 - name: Break-Glass Account Remediation
+  # Human-readable name for this play.
+
   hosts: all
+  # Run on all hosts in the inventory.
+
   gather_facts: true
+  # Collect system information. We need ansible_date_time and OS facts.
+
   become: true
+  # Use sudo to become root. Required because we're:
+  # - Creating users
+  # - Modifying /etc/passwd, /etc/shadow
+  # - Writing to /etc/sudoers.d/
+
   vars_files:
     - ../vault.yml
+    # Load sensitive variables from the vault file.
+    # This file contains:
+    # - vault_breakglass_password: the password for the break-glass account
+    #
+    # The "../" means go up one directory (from playbooks/ to project root).
+    #
+    # SECURITY: This file should be encrypted with ansible-vault:
+    #   ansible-vault encrypt vault.yml
 
   vars:
+    # "vars" defines variables for this play.
+    # These override defaults from the role.
+
     breakglass_password: "{{ vault_breakglass_password }}"
+    # Set the break-glass password from the vault.
+    #
+    # "{{ ... }}" is Jinja2 templating syntax.
+    # It means "insert the value of this variable here".
+    # vault_breakglass_password comes from vault.yml.
+
     breakglass_ssh_pub_key: >-
       {{ lookup('file', 'files/breakglass_id_rsa.pub', errors='ignore') | default('') }}
+    # Load the SSH public key from a file.
+    #
+    # BREAKDOWN:
+    # - ">-" is YAML syntax for a multi-line string (folded, no trailing newline)
+    # - "lookup('file', ...)" reads a file from the control node (not target)
+    # - 'files/breakglass_id_rsa.pub' is the path to the public key file
+    # - "errors='ignore'" means don't fail if the file doesn't exist
+    # - "| default('')" means if the lookup fails, use an empty string
+    #
+    # IMPORTANT: You must generate this key first! See README.md for instructions.
 
   tasks:
+    # List of tasks to execute.
+
     - name: Remediate break-glass account
+      # This task includes (runs) a specific file from the role.
+
       ansible.builtin.include_role:
         name: breakglass_compliance
+        # Use the breakglass_compliance role.
+
         tasks_from: remediate.yml
+        # Instead of running tasks/main.yml (the default),
+        # run tasks/remediate.yml specifically.
+        #
+        # This allows us to reuse the role for both:
+        # - Compliance checking (main.yml)
+        # - Remediation (remediate.yml)
