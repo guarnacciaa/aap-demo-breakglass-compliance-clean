@@ -488,11 +488,17 @@ ansible-playbook playbooks/aap_config.yml --ask-vault-pass
 3. Click **Launch**
 4. Review the job output
 
-#### From the CLI (using `awx`):
+#### From the CLI (using AAP API):
 
 ```bash
-awx job_templates launch "BreakGlass - Compliance Check" --monitor
+# Using curl to launch a job template via AAP REST API
+curl -X POST -k \
+  -H "Content-Type: application/json" \
+  -u admin:password \
+  https://aap.example.com/api/v2/job_templates/BreakGlass%20-%20Compliance%20Check/launch/
 ```
+
+> **Note:** Replace `admin:password` and `aap.example.com` with your actual credentials and AAP hostname.
 
 #### Expected Output:
 
