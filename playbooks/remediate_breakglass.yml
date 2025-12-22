@@ -67,13 +67,15 @@
     # vault_breakglass_password comes from vault.yml.
 
     breakglass_ssh_pub_key: >-
-      {{ lookup('file', 'files/breakglass_id_rsa.pub', errors='ignore') | default('') }}
+      {{ lookup('file', playbook_dir ~ '/../files/breakglass_id_rsa.pub', errors='ignore') | default('') }}
     # Load the SSH public key from a file.
     #
     # BREAKDOWN:
     # - ">-" is YAML syntax for a multi-line string (folded, no trailing newline)
     # - "lookup('file', ...)" reads a file from the control node (not target)
-    # - 'files/breakglass_id_rsa.pub' is the path to the public key file
+    # - "playbook_dir" is an Ansible variable containing the directory of the playbook
+    # - "~ '/../files/...'" concatenates to go up one directory and into files/
+    # - This ensures the path works regardless of the current working directory
     # - "errors='ignore'" means don't fail if the file doesn't exist
     # - "| default('')" means if the lookup fails, use an empty string
     #
